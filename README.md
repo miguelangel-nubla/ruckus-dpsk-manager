@@ -59,7 +59,7 @@ To install Ruckus DPSK Manager using `go install`, you need to have Go (Golang) 
 Ruckus DPSK Manager is a command-line tool that can be used with various commands and options. Here is the general usage:
 
 ```bash
-./ruckus-dpsk-manager [options] <command> [arguments]
+ruckus-dpsk-manager [options] <command> [arguments]
 ```
 
 Use the `-help` option with any command to see its specific usage instructions.
