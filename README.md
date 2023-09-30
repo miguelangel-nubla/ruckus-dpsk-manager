@@ -11,27 +11,49 @@ Ruckus DPSK Manager is a command-line utility for managing Dynamic Pre-Shared Ke
 
 ## Installation
 
-To install Ruckus DPSK Manager, follow these steps:
+### Download from GitHub Releases
 
-1. **Clone the Repository:**
+You can also download pre-built binaries from the [GitHub Releases page](https://github.com/miguelangel-nubla/ruckus-dpsk-manager/releases). Follow these steps:
 
-   ```bash
-   git clone https://github.com/your-username/ruckus-dpsk-manager.git
-   cd ruckus-dpsk-manager
-   ```
+1. Visit the [GitHub Releases page](https://github.com/miguelangel-nubla/ruckus-dpsk-manager/releases).
 
-2. **Build the Executable:**
+2. Download the appropriate binary for your operating system and architecture and rename it to `ruckus-dpsk-manager`.
 
-   ```bash
-   go build
-   ```
+3. Place the downloaded binary in a directory included in your system's PATH to make it executable.
 
-3. **Run the Application:**
+4. Verify the installation by running:
 
    ```bash
-   ./ruckus-dpsk-manager
+   ruckus-dpsk-manager
    ```
 
+Please note that this method provides pre-built binaries, so you don't need Go installed on your system.
+
+### Using `go install`
+
+To install Ruckus DPSK Manager using `go install`, you need to have Go (Golang) installed on your system. Follow these steps:
+
+1. **Install Go (if not already installed):**
+
+   If you don't have Go installed, you can download and install it from the [official Go website](https://golang.org/dl/).
+
+2. **Fetch and install Ruckus DPSK Manager from source code:**
+
+   Open a terminal and run the following command to install the tool directly from the source code:
+
+   ```bash
+   go install github.com/miguelangel-nubla/ruckus-dpsk-manager@latest
+   ```
+
+   This command fetches the latest version of Ruckus DPSK Manager and installs it in your Go bin directory.
+
+3. **Verify the installation:**
+
+   You can now verify that Ruckus DPSK Manager is installed correctly by running the following command:
+
+   ```bash
+   ruckus-dpsk-manager
+   ```
 ## Usage
 
 Ruckus DPSK Manager is a command-line tool that can be used with various commands and options. Here is the general usage:
