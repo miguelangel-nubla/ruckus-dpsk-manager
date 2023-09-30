@@ -5,7 +5,7 @@ version: 1
 goos: linux
 
 # The architecture to compile for. `GOARCH` env variable will be set to this value.
-goarch: amd64
+goarch: arm64
 
 # Binary output name.
 # {{ .Os }} will be replaced by goos field in the config file.
