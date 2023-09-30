@@ -2,10 +2,17 @@
 version: 1
 
 # The OS to compile for. `GOOS` env variable will be set to this value.
-goos: linux darwin windows
+goos:
+  - linux
+  - darwin
+  - windows
 
 # The architecture to compile for. `GOARCH` env variable will be set to this value.
-goarch: 386 amd64 arm arm64
+goarch:
+  - 386
+  - amd64
+  - arm
+  - arm64
 
 # Binary output name.
 # {{ .Os }} will be replaced by goos field in the config file.
