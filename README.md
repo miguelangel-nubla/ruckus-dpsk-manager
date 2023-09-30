@@ -71,7 +71,7 @@ Use the `-help` option with any command to see its specific usage instructions.
 Backup the Ruckus controller configuration.
 
 ```bash
-./ruckus-dpsk-manager backup <output_filename>
+ruckus-dpsk-manager backup <output_filename>
 ```
 
 - `<output_filename>`: The name of the file where the backup will be saved.
@@ -81,7 +81,7 @@ Backup the Ruckus controller configuration.
 Manage DPSK users.
 
 ```bash
-./ruckus-dpsk-manager dpsk <wlanID> <username>
+ruckus-dpsk-manager dpsk <wlanID> <username>
 ```
 
 - `<wlanID>`: The ID of the WLAN for which to manage DPSK users.
