@@ -1,23 +1,22 @@
 package main
 
 import (
-    "crypto/tls"
-    "fmt"
-    "net/http"
-    "net/url"
-    "strings"
-	"io/ioutil"
-	"os"
+	"crypto/tls"
+	"fmt"
 	"io"
+	"net/http"
+	"net/url"
+	"os"
+	"strings"
 	"time"
 )
 
 type RuckusClient struct {
 	Debug     bool
-    client    *http.Client
-	server		  string // Add a field to store the server address
-    csrfToken string // Add a field to store the CSRF token
-    cookie    string // Add a field to store the cookie
+	client    *http.Client
+	server    string // Add a field to store the server address
+	csrfToken string // Add a field to store the CSRF token
+	cookie    string // Add a field to store the cookie
 }
 
 func NewRuckusClient(server string) *RuckusClient {
@@ -38,30 +37,37 @@ func NewRuckusClient(server string) *RuckusClient {
 }
 
 func (rc *RuckusClient) Login(username, password string) error {
-    // Login URL
-    loginURL := rc.server + "/admin/login.jsp"
-    loginData := url.Values{
-        "username": {username},
-        "password": {password},
-        "ok":       {"Log In"},
-    }
+	// Login URL
+	loginURL := rc.server + "/admin/login.jsp"
+	loginData := url.Values{
+		"username": {username},
+		"password": {password},
+		"ok":       {"Log In"},
+	}
 
-    // Send the login request
-    loginResp, err := rc.client.PostForm(loginURL, loginData)
-    if err != nil {
-        return fmt.Errorf("error sending login request: %v", err)
-    }
-    defer loginResp.Body.Close()
+	// Send the login request
+	loginResp, err := rc.client.PostForm(loginURL, loginData)
+	if err != nil {
+		return fmt.Errorf("error sending login request: %v", err)
+	}
+	defer loginResp.Body.Close()
 
-    // Check if login was successful
-    if loginResp.StatusCode != http.StatusOK && loginResp.StatusCode != http.StatusFound {
-        return fmt.Errorf("login failed with status code: %v", loginResp.StatusCode)
-    }
+	// Check if login was successful
+	if loginResp.Header.Get("HTTP_X_CSRF_TOKEN") == "" {
+		if rc.Debug {
+			body, err := io.ReadAll(loginResp.Body)
+			if err != nil {
+				return fmt.Errorf("error reading response body: %v", err)
+			}
+			fmt.Println(string(body))
+		}
+		return fmt.Errorf("check user and password, status code: %v", loginResp.StatusCode)
+	}
 
-    rc.cookie = loginResp.Header.Get("Set-Cookie")
-    rc.csrfToken = loginResp.Header.Get("HTTP_X_CSRF_TOKEN")
+	rc.cookie = loginResp.Header.Get("Set-Cookie")
+	rc.csrfToken = loginResp.Header.Get("HTTP_X_CSRF_TOKEN")
 
-    return nil
+	return nil
 }
 
 func (rc *RuckusClient) getCurrentTimestamp() string {
@@ -96,7 +102,7 @@ func (rc *RuckusClient) SaveBackup(outputFile string) error {
 
 	// Set the necessary headers
 	req.Header.Set("Accept", "application/octet-stream") // Specify the desired content type
-	req.Header.Set("Cookie", rc.cookie) // Use the stored cookie
+	req.Header.Set("Cookie", rc.cookie)                  // Use the stored cookie
 
 	// Send the GET request
 	resp, err := rc.client.Do(req)
@@ -131,7 +137,7 @@ func (rc *RuckusClient) GetDpskData() (*DpskData, error) {
 	url := rc.server + "/admin/_cmdstat.jsp"
 
 	// Create the request body
-	body := `<ajax-request action="getstat" comp="stamgr" updater="dpsk-list.`+rc.getCurrentTimestamp()+`">
+	body := `<ajax-request action="getstat" comp="stamgr" updater="dpsk-list.` + rc.getCurrentTimestamp() + `">
 		<dpsklist/>
 	</ajax-request>`
 
@@ -158,7 +164,7 @@ func (rc *RuckusClient) GetDpskData() (*DpskData, error) {
 	defer resp.Body.Close()
 
 	// Read the response body
-	xmlData, err := ioutil.ReadAll(resp.Body)
+	xmlData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error reading response body: %v", err)
 	}
