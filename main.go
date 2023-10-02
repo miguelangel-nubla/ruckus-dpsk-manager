@@ -10,11 +10,12 @@ import (
 func main() {
 	// Define command line flags
 	var (
-		serverFlag   = flag.String("server", "https://unleashed.ruckuswireless.com", "Ruckus controller server location")
-		usernameFlag = flag.String("username", "dpsk", "Username for logging in to the Ruckus controller")
-		passwordFlag = flag.String("password", "", "Password for logging in to the Ruckus controller")
-		debugFlag    = flag.Bool("debug", false, "Enable debug output")
-		helpFlag     = flag.Bool("help", false, "Print usage information")
+		serverFlag     = flag.String("server", "https://unleashed.ruckuswireless.com", "Ruckus controller server location")
+		usernameFlag   = flag.String("username", "dpsk", "Username for logging in to the Ruckus controller")
+		passwordFlag   = flag.String("password", "", "Password for logging in to the Ruckus controller")
+		caCertPathFlag = flag.String("cacert", "", "Path to a custom CA certificate")
+		debugFlag      = flag.Bool("debug", false, "Enable debug output")
+		helpFlag       = flag.Bool("help", false, "Print usage information")
 	)
 
 	// Parse command line flags
@@ -33,7 +34,10 @@ func main() {
 	}
 
 	// Create a new RuckusClient
-	client := NewRuckusClient(*serverFlag)
+	client, err := NewRuckusClient(*serverFlag, *caCertPathFlag)
+	if err != nil {
+		exitWithError(fmt.Sprintf("Error initializing Ruckus client: %v", err), 1)
+	}
 	client.Debug = *debugFlag
 
 	// Perform the login
@@ -78,7 +82,7 @@ func backup(client *RuckusClient, args []string) int {
 	outputFilename := args[0]
 	err := client.SaveBackup(outputFilename)
 	if err != nil {
-        exitWithError(fmt.Sprintf("Error saving backup: %v", err), 1)
+		exitWithError(fmt.Sprintf("Error saving backup: %v", err), 1)
 	}
 
 	return 0

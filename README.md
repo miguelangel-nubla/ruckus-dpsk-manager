@@ -92,6 +92,7 @@ ruckus-dpsk-manager dpsk <wlanID> <username>
 - `-server`: Ruckus controller server location (default: https://unleashed.ruckuswireless.com).
 - `-username`: Username for logging in to the Ruckus controller (default: dpsk).
 - `-password`: Password for logging in to the Ruckus controller (required).
+- `-cacert`: Path to a custom CA certificate.
 - `-debug`: Enable debug output.
 - `-help`: Print usage information.
 

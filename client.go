@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"net/http"
@@ -19,13 +20,25 @@ type RuckusClient struct {
 	cookie    string // Add a field to store the cookie
 }
 
-func NewRuckusClient(server string) *RuckusClient {
-	// Create a custom transport that skips certificate verification
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+func NewRuckusClient(server string, caCertPath string) (*RuckusClient, error) {
+	// Base transport
+	tr := &http.Transport{}
+
+	// If caCertPath is specified, add the custom CA cert
+	if caCertPath != "" {
+		caCert, err := os.ReadFile(caCertPath)
+		if err != nil {
+			return nil, fmt.Errorf("error reading custom CA certificate: %v", err)
+		}
+		caCertPool := x509.NewCertPool()
+		if !caCertPool.AppendCertsFromPEM(caCert) {
+			return nil, fmt.Errorf("failed to append custom CA certificate")
+		}
+		tr.TLSClientConfig = &tls.Config{
+			RootCAs: caCertPool,
+		}
 	}
 
-	// Create an HTTP client with the custom transport
 	httpClient := &http.Client{
 		Transport: tr,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -33,7 +46,7 @@ func NewRuckusClient(server string) *RuckusClient {
 		},
 	}
 
-	return &RuckusClient{client: httpClient, server: server, Debug: false}
+	return &RuckusClient{client: httpClient, server: server, Debug: false}, nil
 }
 
 func (rc *RuckusClient) Login(username, password string) error {
