@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"crypto/tls"
@@ -8,11 +8,10 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strings"
 	"time"
 )
 
-type RuckusClient struct {
+type Client struct {
 	Debug     bool
 	client    *http.Client
 	server    string // Add a field to store the server address
@@ -20,7 +19,7 @@ type RuckusClient struct {
 	cookie    string // Add a field to store the cookie
 }
 
-func NewRuckusClient(server string, caCertPath string) (*RuckusClient, error) {
+func New(server string, caCertPath string) (*Client, error) {
 	// Base transport
 	tr := &http.Transport{}
 
@@ -46,10 +45,10 @@ func NewRuckusClient(server string, caCertPath string) (*RuckusClient, error) {
 		},
 	}
 
-	return &RuckusClient{client: httpClient, server: server, Debug: false}, nil
+	return &Client{client: httpClient, server: server, Debug: false}, nil
 }
 
-func (rc *RuckusClient) Login(username, password string) error {
+func (rc *Client) Login(username, password string) error {
 	// Login URL
 	loginURL := rc.server + "/admin/login.jsp"
 	loginData := url.Values{
@@ -83,7 +82,7 @@ func (rc *RuckusClient) Login(username, password string) error {
 	return nil
 }
 
-func (rc *RuckusClient) getCurrentTimestamp() string {
+func (rc *Client) getCurrentTimestamp() string {
 	// Get the current time in UnixNano format (nanoseconds since epoch)
 	currentTime := time.Now().UnixNano()
 
@@ -103,7 +102,7 @@ func (rc *RuckusClient) getCurrentTimestamp() string {
 	return timestamp
 }
 
-func (rc *RuckusClient) SaveBackup(outputFile string) error {
+func (rc *Client) Backup(outputFile string) error {
 	// Define the URL for saving the backup
 	saveBackupURL := rc.server + "/admin/webPage/system/admin/_savebackup.jsp"
 
@@ -140,104 +139,6 @@ func (rc *RuckusClient) SaveBackup(outputFile string) error {
 	_, err = io.Copy(outFile, resp.Body)
 	if err != nil {
 		return fmt.Errorf("error copying response body to output file: %v", err)
-	}
-
-	return nil
-}
-
-func (rc *RuckusClient) GetDpskData() (*DpskData, error) {
-	// Create the request URL
-	url := rc.server + "/admin/_cmdstat.jsp"
-
-	// Create the request body
-	body := `<ajax-request action="getstat" comp="stamgr" updater="dpsk-list.` + rc.getCurrentTimestamp() + `">
-		<dpsklist/>
-	</ajax-request>`
-
-	if rc.Debug {
-		fmt.Println(body)
-	}
-
-	// Create the request object
-	req, err := http.NewRequest("POST", url, strings.NewReader(body))
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %v", err)
-	}
-
-	// Set the request headers
-	req.Header.Set("X-CSRF-Token", rc.csrfToken)
-	req.Header.Set("Cookie", rc.cookie)
-	req.Header.Set("Content-Type", "text/xml")
-
-	// Send the request
-	resp, err := rc.client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("error sending request: %v", err)
-	}
-	defer resp.Body.Close()
-
-	// Read the response body
-	xmlData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error reading response body: %v", err)
-	}
-
-	dpskData, err := NewDpskData(xmlData)
-	if rc.Debug {
-		fmt.Printf("Parsed DPSKs:\n")
-		for _, dpsk := range dpskData.Entries {
-			fmt.Printf("%v\n", dpsk)
-		}
-	}
-
-	return dpskData, err
-}
-
-func (rc *RuckusClient) CreateDpskUser(wlanID int, username string) error {
-	// Create the request URL
-	url := rc.server + "/admin/_cmdstat.jsp"
-
-	// Create the request body
-	body := fmt.Sprintf(`<ajax-request action='docmd' checkAbility='2' updater='system.`+rc.getCurrentTimestamp()+`' comp='system'>
-		<xcmd
-			cmd='batch-dpsk'
-			type='gen'
-			num='1'
-			max-num='2048'
-			batch-dpsk=''
-			wlansvc-id='%d'
-			role-id=''
-			dpsk-len='8'
-			dvlan-id=''
-			user='%s'
-		/>
-	</ajax-request>`, wlanID, username)
-
-	if rc.Debug {
-		fmt.Println(body)
-	}
-
-	// Create the request object
-	req, err := http.NewRequest("POST", url, strings.NewReader(body))
-	if err != nil {
-		return fmt.Errorf("error creating request: %v", err)
-	}
-
-	// Set the request headers
-	req.Header.Set("X-CSRF-Token", rc.csrfToken)
-	req.Header.Set("Cookie", rc.cookie)
-	req.Header.Set("Content-Type", "text/xml")
-
-	// Send the request
-	resp, err := rc.client.Do(req)
-	if err != nil {
-		return fmt.Errorf("error sending request: %v", err)
-	}
-	defer resp.Body.Close()
-
-	// Check if the response status code indicates success (e.g., 200 OK)
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("create DPSK user failed with status code: %v", resp.StatusCode)
 	}
 
 	return nil
