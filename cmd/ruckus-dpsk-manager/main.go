@@ -45,11 +45,6 @@ func main() {
 	}
 
 	args := flag.Args()
-	if len(args) < 1 {
-		printUsage()
-		exitWithError("Error: You must provide an operation")
-	}
-
 	os.Exit(start(ruckusClient, args))
 }
 
@@ -65,6 +60,12 @@ func start(rc *client.Client, args []string) int {
 }
 
 func Handle(rc *client.Client, args []string) error {
+	if len(args) < 1 {
+		return &errors.CommandInvalidError{
+			Msg:      "no command specified",
+			Commands: commands.List,
+		}
+	}
 	operation := args[0]
 
 	for _, cmd := range commands.List {

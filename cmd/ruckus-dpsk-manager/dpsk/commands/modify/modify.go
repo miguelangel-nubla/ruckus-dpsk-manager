@@ -92,21 +92,40 @@ func dpskFieldsToFlags(flagSet *flag.FlagSet, args []string) (map[string]string,
 }
 
 func Handle(svc *client.DpskService, args []string) error {
+	modifyArgs := args
 	pos := FindString(args, "set")
-	if pos == -1 {
-		return fmt.Errorf("set command not found")
+	if pos != -1 {
+		modifyArgs = args[:pos]
 	}
 
-	filterFlags := flag.NewFlagSet("modify", flag.ExitOnError)
-	filters, err := dpskFieldsToFlags(filterFlags, args[:pos])
+	filterFlags := flag.NewFlagSet("filter flags", flag.ExitOnError)
+	filters, err := dpskFieldsToFlags(filterFlags, modifyArgs)
 	if err != nil {
 		return err
 	}
 
-	setFlags := flag.NewFlagSet("set", flag.ExitOnError)
+	if len(filters) == 0 {
+		return &errors.CommandError{
+			Msg:     "no filters specified",
+			FlagSet: filterFlags,
+		}
+	}
+
+	if pos == -1 {
+		return fmt.Errorf("set directive not found")
+	}
+
+	setFlags := flag.NewFlagSet("set flags", flag.ExitOnError)
 	fields, err := dpskFieldsToFlags(setFlags, args[pos+1:])
 	if err != nil {
 		return err
+	}
+
+	if len(fields) == 0 {
+		return &errors.CommandError{
+			Msg:     "no properties specified",
+			FlagSet: filterFlags,
+		}
 	}
 
 	if svc.Client.Debug {
@@ -119,6 +138,13 @@ func Handle(svc *client.DpskService, args []string) error {
 		for k, v := range fields {
 			fmt.Printf("  %s: %s\n", k, v)
 		}
+	}
+
+	if len(filters) == 0 {
+		if svc.Client.Debug {
+			fmt.Print("Filter is empty, nothing changed\n")
+		}
+		return nil
 	}
 
 	dpskList, err := svc.List()

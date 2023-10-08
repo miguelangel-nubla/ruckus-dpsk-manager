@@ -17,7 +17,7 @@ func (e *CommandError) Error() string {
 	var buf bytes.Buffer
 	e.FlagSet.SetOutput(&buf)
 	e.FlagSet.PrintDefaults()
-	return fmt.Sprintf("%s\navailable operations:\n%s", e.Msg, buf.String())
+	return fmt.Sprintf("%s\navailable %s:\n%s", e.Msg, e.FlagSet.Name(), buf.String())
 }
 
 type CommandInvalidError struct {
@@ -31,5 +31,5 @@ func (e *CommandInvalidError) Error() string {
 		helpOutput = helpOutput + "    " + cmd.Name() + ": " + cmd.Description() + "\n"
 	}
 
-	return fmt.Sprintf("%s\navailable operations:\n%s", e.Msg, helpOutput)
+	return fmt.Sprintf("%s\navailable commands:\n%s", e.Msg, helpOutput)
 }

@@ -9,6 +9,13 @@ import (
 )
 
 func Handle(rc *client.Client, args []string) error {
+	if len(args) < 1 {
+		return &errors.CommandInvalidError{
+			Msg:      "no operation specified",
+			Commands: commands.List,
+		}
+	}
+
 	operation := args[0]
 
 	for _, cmd := range commands.List {
