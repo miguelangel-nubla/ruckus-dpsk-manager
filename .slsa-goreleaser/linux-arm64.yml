@@ -7,6 +7,8 @@ goos: linux
 # The architecture to compile for. `GOARCH` env variable will be set to this value.
 goarch: arm64
 
+main: ./cmd/ruckus-dpsk-manager/main.go
+
 # Binary output name.
 # {{ .Os }} will be replaced by goos field in the config file.
 # {{ .Arch }} will be replaced by goarch field in the config file.
