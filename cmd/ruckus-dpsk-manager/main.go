@@ -57,7 +57,7 @@ func start(rc *client.Client, args []string) int {
 	err := Handle(rc, args)
 
 	if err != nil {
-		fmt.Printf("Error: %v", err)
+		fmt.Printf("Error: %v\n", err)
 		return 1
 	}
 

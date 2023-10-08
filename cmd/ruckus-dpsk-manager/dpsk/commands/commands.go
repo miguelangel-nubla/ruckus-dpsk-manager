@@ -1,8 +1,6 @@
 package commands
 
-import (
-	"github.com/miguelangel-nubla/ruckus-dpsk-manager/internal/command"
-)
+import command "github.com/miguelangel-nubla/ruckus-dpsk-manager/internal/command"
 
 var List []command.Command
 

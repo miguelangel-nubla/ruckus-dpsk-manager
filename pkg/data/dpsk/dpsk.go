@@ -3,6 +3,8 @@ package dpsk
 import (
 	"encoding/xml"
 	"fmt"
+	"reflect"
+	"strings"
 )
 
 // Define the struct to match the XML structure
@@ -45,8 +47,8 @@ type Dpsk struct {
 }
 
 // Method to search for a specific DPSK user and return its passphrase
-func (d *Entries) FindPassphrase(wlanID int, username string) (string, error) {
-	for _, entry := range *d {
+func (list *Entries) FindPassphrase(wlanID int, username string) (string, error) {
+	for _, entry := range *list {
 		if entry.User == username && entry.WlansvcID == wlanID {
 			return entry.Passphrase, nil
 		}
@@ -54,13 +56,56 @@ func (d *Entries) FindPassphrase(wlanID int, username string) (string, error) {
 	return "", fmt.Errorf("DPSK user not found for username: %s and wlanID: %d", username, wlanID)
 }
 
-func (d *Entries) FindDpskByWlanUser(wlanID int, username string) (Dpsk, error) {
-	for _, entry := range *d {
+func (list *Entries) FindByWlanUser(wlanID int, username string) (Dpsk, error) {
+	for _, entry := range *list {
 		if entry.User == username && entry.WlansvcID == wlanID {
 			return entry, nil
 		}
 	}
 	return Dpsk{}, fmt.Errorf("DPSK user not found for username: %s and wlanID: %d", username, wlanID)
+}
+
+func (list *Entries) FindByFields(fields map[string]string) Entries {
+	var matches Entries
+
+	for _, dpsk := range *list {
+		t := reflect.TypeOf(dpsk)
+		v := reflect.ValueOf(dpsk)
+
+		match := true
+
+		// iterate over struct fields
+		for i := 0; i < t.NumField(); i++ {
+			field := t.Field(i)
+			fullTag, ok := field.Tag.Lookup("xml")
+			if !ok {
+				// no xml tag, ignore
+				continue
+			}
+
+			parts := strings.Split(fullTag, ",")
+			tag := parts[0]
+
+			value, ok := fields[tag]
+			if !ok {
+				// field not in filter, ignore
+				continue
+			}
+
+			if v.Field(i).String() != value {
+				// field value does not match
+				match = false
+				break
+			}
+		}
+
+		if match {
+			// all checks passed, add to matches
+			matches = append(matches, dpsk)
+		}
+	}
+
+	return matches
 }
 
 func FromXml(xmlData []byte) (*Entries, error) {

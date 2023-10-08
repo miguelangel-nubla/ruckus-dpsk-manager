@@ -33,7 +33,7 @@ func Handle(svc *client.DpskService, args []string) error {
 		return fmt.Errorf("error getting DPSK list: %v", err)
 	}
 
-	dpsk, err := dpskData.FindDpskByWlanUser(*wlanID, *username)
+	dpsk, err := dpskData.FindByWlanUser(*wlanID, *username)
 	if err != nil {
 		err = svc.Create(*wlanID, *username)
 		if err != nil {
@@ -45,7 +45,7 @@ func Handle(svc *client.DpskService, args []string) error {
 			return fmt.Errorf("error getting DPSK list: %v", err)
 		}
 
-		dpsk, err = dpskData.FindDpskByWlanUser(*wlanID, *username)
+		dpsk, err = dpskData.FindByWlanUser(*wlanID, *username)
 		if err != nil {
 			return fmt.Errorf("error finding user: %v", err)
 		}
