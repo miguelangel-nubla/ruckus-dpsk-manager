@@ -16,7 +16,7 @@ type CommandError struct {
 func (e *CommandError) Error() string {
 	var buf bytes.Buffer
 	e.FlagSet.SetOutput(&buf)
-	e.FlagSet.PrintDefaults()
+	e.FlagSet.Usage()
 	return fmt.Sprintf("%s\navailable %s:\n%s", e.Msg, e.FlagSet.Name(), buf.String())
 }
 

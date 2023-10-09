@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/miguelangel-nubla/ruckus-dpsk-manager/pkg/data/dpsk"
 )
@@ -84,45 +83,6 @@ func (d *DpskService) Create(wlanID int, username string) error {
 			user='%s'
 		/>
 	</ajax-request>`, d.Client.getCurrentTimestamp(), wlanID, username)
-
-	if d.Client.Debug {
-		fmt.Println(body)
-	}
-
-	// Create the request object
-	req, err := http.NewRequest("POST", url, strings.NewReader(body))
-	if err != nil {
-		return fmt.Errorf("error creating request: %v", err)
-	}
-
-	// Set the request headers
-	req.Header.Set("X-CSRF-Token", d.Client.csrfToken)
-	req.Header.Set("Cookie", d.Client.cookie)
-	req.Header.Set("Content-Type", "text/xml")
-
-	// Send the request
-	resp, err := d.Client.client.Do(req)
-	if err != nil {
-		return fmt.Errorf("error sending request: %v", err)
-	}
-	defer resp.Body.Close()
-
-	// Check if the response status code indicates success (e.g., 200 OK)
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("create DPSK user failed with status code: %v", resp.StatusCode)
-	}
-
-	return nil
-}
-
-func (d *DpskService) ModifyExp(dpskID int, expiration time.Time) error {
-	// Create the request URL
-	url := d.Client.server + "/admin/_conf.jsp"
-
-	// Create the request body
-	body := fmt.Sprintf(`<ajax-request action='updobj' updater='dpsk-list.%s'comp='dpsk-list'>
-		<dpsk id='%d' next-rekey='%d' name='dpsk%d' IS_PARTIAL='true'/>
-	</ajax-request>`, d.Client.getCurrentTimestamp(), dpskID, expiration.Unix(), dpskID)
 
 	if d.Client.Debug {
 		fmt.Println(body)

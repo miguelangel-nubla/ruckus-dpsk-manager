@@ -36,7 +36,7 @@ To install Ruckus DPSK Manager using `go install`, you need to have Go (Golang) 
 Open a terminal and run the following command to install the tool directly from the source code:
 
 ```bash
-go install github.com/miguelangel-nubla/ruckus-dpsk-manager@latest
+go install github.com/miguelangel-nubla/ruckus-dpsk-manager/cmd/ruckus-dpsk-manager@latest
 ```
 
 ## Usage
@@ -87,13 +87,25 @@ ruckus-dpsk-manager dpsk create <wlanID> <username>
 
 #### `modify`
 
-Finds DSPK entries matching `[filter-flags]` and modifies its properties according to `[set-flags]`.
+Finds DSPK entries matching `[filter-flags]` and modifies its properties according to `[value-flags]`.
 
 ```bash
-ruckus-dpsk-manager dpsk modify [filter-flags] set [set-flags]
+ruckus-dpsk-manager dpsk modify [filter-flags] set [value-flags]
 ```
 
-The list of available `[filter-flags]` and `[set-flags]` is the same and represent the property keys of a DPSK entry, use `--help` to list the available flags and its valid values.
+The list of available `[filter-flags]` and `[value-flags]` is the same and represent the property keys of a DPSK entry, use `--help` to list the available flags and its valid values.
+
+You can delete entries setting the expiration date to a value in the past.
+
+#### `list`
+
+Finds DSPK entries matching `[filter-flags]`.
+
+```bash
+ruckus-dpsk-manager dpsk list [filter-flags]
+```
+
+The list of available `[filter-flags]` represent the property keys of a DPSK entry, use `--help` to list the available flags and its valid values.
 
 ## License
 

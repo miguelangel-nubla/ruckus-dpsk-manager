@@ -1,4 +1,4 @@
-package modify
+package list
 
 import (
 	"encoding/xml"
@@ -270,12 +270,6 @@ func flagSetUsageOrdered(flagSet *flag.FlagSet) func() {
 
 func Handle(svc *client.DpskService, args []string) error {
 	filterArgs := args
-	valueArgs := []string{}
-	pos := FindString(args, "set")
-	if pos != -1 {
-		filterArgs = args[:pos]
-		valueArgs = args[pos+1:]
-	}
 
 	// Generate flags for filtering
 
@@ -337,43 +331,6 @@ func Handle(svc *client.DpskService, args []string) error {
 		}
 	}
 
-	if pos == -1 {
-		return fmt.Errorf("set directive not found")
-	}
-
-	// Generate flags for setting values
-
-	valuesFlagSet := flag.NewFlagSet("value flags", flag.ExitOnError)
-
-	filtersExactAsValues, err := generateDpskFiltersExact(valuesFlagSet)
-	if err != nil {
-		return err
-	}
-
-	// Parse the value flags here so we can validate them
-	valuesFlagSet.Parse(valueArgs)
-
-	valuesToSet, err := extractValuesFromExactFilters(filtersExactAsValues)
-	if err != nil {
-		return err
-	}
-
-	if len(valuesToSet) == 0 {
-		return &errors.CommandError{
-			Msg:     "no properties specified to modify",
-			FlagSet: filtersFlagSet,
-		}
-	}
-
-	// Values validation end
-
-	if svc.Client.Debug {
-		fmt.Println("Setting fields:")
-		for k, v := range valuesToSet {
-			fmt.Printf("  %s: %s\n", k, v)
-		}
-	}
-
 	dpskList, err := svc.List()
 	if err != nil {
 		return fmt.Errorf("error getting DPSK list: %v", err)
@@ -384,45 +341,12 @@ func Handle(svc *client.DpskService, args []string) error {
 		return fmt.Errorf("error filtering DPSK list: %v", err)
 	}
 
-	// Print before
-	if svc.Client.Debug {
-		fmt.Printf("Found %d matches:\n", len(*matches))
-		output, err := xml.MarshalIndent(matches, "", "  ")
-		if err != nil {
-			return err
-		}
-
-		fmt.Println(string(output))
+	output, err := xml.MarshalIndent(matches, "", "  ")
+	if err != nil {
+		return err
 	}
 
-	// modify the matches
-	modified := make(map[int]bool)
-	for _, dpsk := range *matches {
-		if err := svc.Modify(dpsk.ID, valuesToSet); err != nil {
-			return fmt.Errorf("error modifying DPSK %d: %v", dpsk.ID, err)
-		}
-		modified[dpsk.ID] = true
-	}
-
-	// Print after
-	if svc.Client.Debug {
-		dpskList, err = svc.List()
-		if err != nil {
-			return fmt.Errorf("error getting DPSK list: %v", err)
-		}
-
-		// iterate over dpskList to print the modified records
-		fmt.Printf("Modified %d records:\n", len(modified))
-		for _, dpsk := range *dpskList {
-			if _, ok := modified[dpsk.ID]; ok {
-				output, err := xml.MarshalIndent(dpsk, "", "  ")
-				if err != nil {
-					return fmt.Errorf("Error: %v\n", err)
-				}
-				fmt.Println(string(output))
-			}
-		}
-	}
+	fmt.Println(string(output))
 
 	return nil
 }

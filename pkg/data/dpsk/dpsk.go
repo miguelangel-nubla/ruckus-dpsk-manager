@@ -4,8 +4,11 @@ import (
 	"encoding/xml"
 	"fmt"
 	"reflect"
-	"strings"
 )
+
+type Filter interface {
+	Test(string) bool
+}
 
 // Define the struct to match the XML structure
 type ajaxResponse struct {
@@ -27,7 +30,7 @@ type dpskList struct {
 	Entries Entries `xml:"dpsk"`
 }
 
-type Entries []Dpsk
+type Entries []*Dpsk
 
 type Dpsk struct {
 	ID           int    `xml:"id,attr"`
@@ -46,66 +49,45 @@ type Dpsk struct {
 	Usage        string `xml:"usage,attr"`
 }
 
-// Method to search for a specific DPSK user and return its passphrase
-func (list *Entries) FindPassphrase(wlanID int, username string) (string, error) {
-	for _, entry := range *list {
-		if entry.User == username && entry.WlansvcID == wlanID {
-			return entry.Passphrase, nil
-		}
-	}
-	return "", fmt.Errorf("DPSK user not found for username: %s and wlanID: %d", username, wlanID)
-}
-
-func (list *Entries) FindByWlanUser(wlanID int, username string) (Dpsk, error) {
+func (list *Entries) FindByWlanUser(wlanID int, username string) (*Dpsk, error) {
 	for _, entry := range *list {
 		if entry.User == username && entry.WlansvcID == wlanID {
 			return entry, nil
 		}
 	}
-	return Dpsk{}, fmt.Errorf("DPSK user not found for username: %s and wlanID: %d", username, wlanID)
+	return &Dpsk{}, fmt.Errorf("DPSK user not found for username: %s and wlanID: %d", username, wlanID)
 }
 
-func (list *Entries) FindByFields(fields map[string]string) Entries {
+func (list *Entries) Filter(filters map[string]Filter) (*Entries, error) {
 	var matches Entries
 
 	for _, dpsk := range *list {
-		t := reflect.TypeOf(dpsk)
-		v := reflect.ValueOf(dpsk)
-
 		match := true
-
-		// iterate over struct fields
-		for i := 0; i < t.NumField(); i++ {
-			field := t.Field(i)
-			fullTag, ok := field.Tag.Lookup("xml")
-			if !ok {
-				// no xml tag, ignore
-				continue
+		for tag, filter := range filters {
+			field := reflect.ValueOf(*dpsk).FieldByName(tag)
+			var value string
+			switch field.Kind() {
+			case reflect.String:
+				value = field.String()
+			case reflect.Int:
+				value = fmt.Sprintf("%d", field.Int())
+			default:
+				return nil, fmt.Errorf("unsupported type: %v", field.Kind())
 			}
 
-			parts := strings.Split(fullTag, ",")
-			tag := parts[0]
-
-			value, ok := fields[tag]
-			if !ok {
-				// field not in filter, ignore
-				continue
-			}
-
-			if v.Field(i).String() != value {
-				// field value does not match
+			if filter.Test(value) == false {
+				// end loop on first failed check
 				match = false
 				break
 			}
 		}
 
 		if match {
-			// all checks passed, add to matches
 			matches = append(matches, dpsk)
 		}
 	}
 
-	return matches
+	return &matches, nil
 }
 
 func FromXml(xmlData []byte) (*Entries, error) {
