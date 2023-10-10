@@ -17,7 +17,7 @@ func (rc *Client) Dpsk() *DpskService {
 	return &DpskService{Client: rc}
 }
 
-func (d *DpskService) List() (*dpsk.Entries, error) {
+func (d *DpskService) List() (dpsk.Entries, error) {
 	// Create the request URL
 	url := d.Client.server + "/admin/_cmdstat.jsp"
 
@@ -56,7 +56,7 @@ func (d *DpskService) List() (*dpsk.Entries, error) {
 	entries, err := dpsk.FromXml(xmlData)
 	if d.Client.Debug {
 		fmt.Printf("Parsed DPSKs:\n")
-		for _, dpsk := range *entries {
+		for _, dpsk := range entries {
 			fmt.Printf("%v\n", dpsk)
 		}
 	}
@@ -64,7 +64,7 @@ func (d *DpskService) List() (*dpsk.Entries, error) {
 	return entries, err
 }
 
-func (d *DpskService) Create(wlanID int, username string) error {
+func (d *DpskService) Create(wlansvcID int, user string, dpskLen int) error {
 	// Create the request URL
 	url := d.Client.server + "/admin/_cmdstat.jsp"
 
@@ -78,11 +78,11 @@ func (d *DpskService) Create(wlanID int, username string) error {
 			batch-dpsk=''
 			wlansvc-id='%d'
 			role-id=''
-			dpsk-len='8'
+			dpsk-len='%d'
 			dvlan-id=''
 			user='%s'
 		/>
-	</ajax-request>`, d.Client.getCurrentTimestamp(), wlanID, username)
+	</ajax-request>`, d.Client.getCurrentTimestamp(), wlansvcID, dpskLen, user)
 
 	if d.Client.Debug {
 		fmt.Println(body)

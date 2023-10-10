@@ -79,11 +79,15 @@ Manage DPSK entries.
 Create a new DPSK and print the passphrase.
 
 ```bash
-ruckus-dpsk-manager dpsk create <wlanID> <username>
+ruckus-dpsk-manager dpsk create -wlansvc-id <id> -user <username>
 ```
 
-- `<wlanID>`: The ID of the WLAN.
-- `<username>`: The username of the DPSK user.
+Mandatory arguments
+- `wlansvc-id`: Ruckus WLAN service ID.
+- `user`: The username for the DPSK.
+
+Optional arguments:
+- `dpsk-len`: DPSK character length.
 
 #### `modify`
 

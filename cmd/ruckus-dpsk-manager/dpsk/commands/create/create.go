@@ -21,40 +21,41 @@ func (filter *filterExact) Test(s string) bool {
 
 func Handle(svc *client.DpskService, args []string) error {
 	dpskCmd := flag.NewFlagSet("create", flag.ExitOnError)
-	wlanID := dpskCmd.Int("wlansvc-id", -1, "Ruckus Wlan Service ID")
-	username := dpskCmd.String("user", "", "Username")
+	wlansvcID := dpskCmd.Int("wlansvc-id", -1, "Ruckus Wlan Service ID")
+	user := dpskCmd.String("user", "", "Username")
+	dpskLen := dpskCmd.Int("dpsk-len", 8, "DPSK characger length")
 	dpskCmd.Parse(args)
 
-	if *wlanID < 0 {
+	if *wlansvcID < 0 {
 		return &errors.CommandError{
-			Msg:     fmt.Sprintf("wlan-id is invalid: %d", *wlanID),
+			Msg:     fmt.Sprintf("wlan-id is invalid: %d", *wlansvcID),
 			FlagSet: dpskCmd,
 		}
 	}
 
-	if *username == "" {
+	if *user == "" {
 		return &errors.CommandError{
-			Msg:     fmt.Sprintf("username is invalid: %s", *username),
+			Msg:     fmt.Sprintf("username is invalid: %s", *user),
 			FlagSet: dpskCmd,
 		}
 	}
 
-	wlanIDStr := strconv.Itoa(*wlanID)
+	wlanIDStr := strconv.Itoa(*wlansvcID)
 
 	filters := make(map[string]dpsk.Filter)
-	filters["WlansvcID"] = &filterExact{value: &wlanIDStr}
-	filters["User"] = &filterExact{value: username}
+	filters["wlansvc-id"] = &filterExact{value: &wlanIDStr}
+	filters["user"] = &filterExact{value: user}
 
 	entries, err := loadEntries(svc, filters)
 	if err != nil {
 		return fmt.Errorf("error filtering DPSK list: %v", err)
 	}
 
-	if len(*entries) > 0 {
-		return fmt.Errorf("DPSK already exists for username: %s and wlanID: %d", *username, *wlanID)
+	if len(entries) > 0 {
+		return fmt.Errorf("DPSK already exists for username: %s and wlanID: %d", *user, *wlansvcID)
 	}
 
-	err = svc.Create(*wlanID, *username)
+	err = svc.Create(*wlansvcID, *user, *dpskLen)
 	if err != nil {
 		return fmt.Errorf("error creating DPSK user: %v", err)
 	}
@@ -64,13 +65,13 @@ func Handle(svc *client.DpskService, args []string) error {
 		return fmt.Errorf("error filtering DPSK list: %v", err)
 	}
 
-	for _, entry := range *entries {
+	for _, entry := range entries {
 		fmt.Println(entry.Passphrase)
 	}
 	return nil
 }
 
-func loadEntries(svc *client.DpskService, filters map[string]dpsk.Filter) (*dpsk.Entries, error) {
+func loadEntries(svc *client.DpskService, filters map[string]dpsk.Filter) (dpsk.Entries, error) {
 	dpskData, err := svc.List()
 	if err != nil {
 		return nil, err

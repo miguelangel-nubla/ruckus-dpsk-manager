@@ -27,26 +27,48 @@ type apstamgrStat struct {
 }
 
 type dpskList struct {
-	Entries Entries `xml:"dpsk"`
+	Entries tempEntries `xml:"dpsk"`
 }
 
-type Entries []*Dpsk
+type tempEntries []*Dpsk
+
+type Entries map[int]*Dpsk
 
 type Dpsk struct {
-	ID           int    `xml:"id,attr"`
-	RoleID       string `xml:"role-id,attr"`
-	Mac          string `xml:"mac,attr"`
-	WlansvcID    int    `xml:"wlansvc-id,attr"`
-	DvlanID      int    `xml:"dvlan-id,attr"`
-	User         string `xml:"user,attr"`
-	LastRekey    string `xml:"last-rekey,attr"`
-	NextRekey    string `xml:"next-rekey,attr"`
-	Expire       string `xml:"expire,attr"`
-	StartPoint   string `xml:"start-point,attr"`
-	Passphrase   string `xml:"passphrase,attr"`
-	IpAddr       string `xml:"ip-addr,attr"`
-	CurSharedNum string `xml:"cur-shared-num,attr"`
-	Usage        string `xml:"usage,attr"`
+	ID           int    `xml:"id,attr" json:"id" _dpsk_attr:"id"`
+	RoleID       string `xml:"role-id,attr" json:"role-id" _dpsk_attr:"role-id"`
+	Mac          string `xml:"mac,attr" json:"mac" _dpsk_attr:"mac"`
+	WlansvcID    int    `xml:"wlansvc-id,attr" json:"wlansvc-id" _dpsk_attr:"wlansvc-id"`
+	DvlanID      int    `xml:"dvlan-id,attr" json:"dvlan-id" _dpsk_attr:"dvlan-id"`
+	User         string `xml:"user,attr" json:"user" _dpsk_attr:"user"`
+	LastRekey    string `xml:"last-rekey,attr" json:"last-rekey" _dpsk_attr:"last-rekey"`
+	NextRekey    string `xml:"next-rekey,attr" json:"next-rekey" _dpsk_attr:"next-rekey"`
+	Expire       string `xml:"expire,attr" json:"expire" _dpsk_attr:"expire"`
+	StartPoint   string `xml:"start-point,attr" json:"start-point" _dpsk_attr:"start-point"`
+	Passphrase   string `xml:"passphrase,attr" json:"passphrase" _dpsk_attr:"passphrase"`
+	IpAddr       string `xml:"ip-addr,attr" json:"ip-addr" _dpsk_attr:"ip-addr"`
+	CurSharedNum string `xml:"cur-shared-num,attr" json:"cur-shared-num" _dpsk_attr:"cur-shared-num"`
+	Usage        string `xml:"usage,attr" json:"usage" _dpsk_attr:"usage"`
+}
+
+var tagMap map[string]string
+
+func init() {
+	tagMap = createTagToFieldMap(Dpsk{}, "_dpsk_attr")
+}
+
+func createTagToFieldMap(i interface{}, tagKey string) map[string]string {
+	result := make(map[string]string)
+	valType := reflect.TypeOf(i)
+
+	for i := 0; i < valType.NumField(); i++ {
+		field := valType.Field(i)
+		tagVal := field.Tag.Get(tagKey)
+		if tagVal != "" {
+			result[tagVal] = field.Name
+		}
+	}
+	return result
 }
 
 func (list *Entries) FindByWlanUser(wlanID int, username string) (*Dpsk, error) {
@@ -58,13 +80,19 @@ func (list *Entries) FindByWlanUser(wlanID int, username string) (*Dpsk, error) 
 	return &Dpsk{}, fmt.Errorf("DPSK user not found for username: %s and wlanID: %d", username, wlanID)
 }
 
-func (list *Entries) Filter(filters map[string]Filter) (*Entries, error) {
-	var matches Entries
+func (list *Entries) Filter(filters map[string]Filter) (Entries, error) {
+	matches := make(Entries)
 
 	for _, dpsk := range *list {
 		match := true
 		for tag, filter := range filters {
-			field := reflect.ValueOf(*dpsk).FieldByName(tag)
+			fieldName, ok := tagMap[tag]
+			if !ok {
+				return nil, fmt.Errorf("invalid tag: %s", tag)
+			}
+
+			field := reflect.ValueOf(*dpsk).FieldByName(fieldName)
+
 			var value string
 			switch field.Kind() {
 			case reflect.String:
@@ -72,7 +100,7 @@ func (list *Entries) Filter(filters map[string]Filter) (*Entries, error) {
 			case reflect.Int:
 				value = fmt.Sprintf("%d", field.Int())
 			default:
-				return nil, fmt.Errorf("unsupported type: %v", field.Kind())
+				panic("invalid field type") // check Dpsk struct types
 			}
 
 			if filter.Test(value) == false {
@@ -83,18 +111,23 @@ func (list *Entries) Filter(filters map[string]Filter) (*Entries, error) {
 		}
 
 		if match {
-			matches = append(matches, dpsk)
+			matches[dpsk.ID] = dpsk
 		}
 	}
 
-	return &matches, nil
+	return matches, nil
 }
 
-func FromXml(xmlData []byte) (*Entries, error) {
+func FromXml(xmlData []byte) (Entries, error) {
 	var response ajaxResponse
 	if err := xml.Unmarshal(xmlData, &response); err != nil {
-		return &Entries{}, fmt.Errorf("error unmarshalling XML: %v", err)
+		return nil, fmt.Errorf("error unmarshalling XML: %v", err)
 	}
 
-	return &response.Response.Apstamgr.DpskList.Entries, nil
+	dpskMap := make(Entries)
+	for _, dpsk := range response.Response.Apstamgr.DpskList.Entries {
+		dpskMap[dpsk.ID] = dpsk
+	}
+
+	return dpskMap, nil
 }
