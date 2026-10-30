@@ -13,7 +13,8 @@ import (
 var (
 	serverFlag     = flag.String("server", "https://unleashed.ruckuswireless.com", "Ruckus controller server location")
 	usernameFlag   = flag.String("username", "dpsk", "Username for logging in to the Ruckus controller")
-	passwordFlag   = flag.String("password", "", "Password for logging in to the Ruckus controller")
+	passwordFlag   = flag.String("password", "", "Password for logging in to the Ruckus controller (visible to other users in the process list: prefer -password-file)")
+	passwordFile   = flag.String("password-file", "", "Path to a file holding the password for logging in to the Ruckus controller")
 	caCertPathFlag = flag.String("cacert", "", "Path to a custom CA certificate")
 	debugFlag      = flag.Bool("debug", false, "Enable debug output")
 	helpFlag       = flag.Bool("help", false, "Print usage information")
@@ -27,9 +28,10 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *passwordFlag == "" {
+	password, err := resolvePassword(*passwordFlag, *passwordFile)
+	if err != nil {
 		printUsage()
-		exitWithError("Error: password is required")
+		exitWithError("Error: " + err.Error())
 	}
 
 	ruckusClient, err := client.New(*serverFlag, *caCertPathFlag)
@@ -39,7 +41,7 @@ func main() {
 
 	ruckusClient.Debug = *debugFlag
 
-	err = ruckusClient.Login(*usernameFlag, *passwordFlag)
+	err = ruckusClient.Login(*usernameFlag, password)
 	if err != nil {
 		exitWithError(fmt.Sprintf("Error login with Ruckus client: %v", err))
 	}
@@ -52,7 +54,7 @@ func start(rc *client.Client, args []string) int {
 	err := Handle(rc, args)
 
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		return 1
 	}
 

@@ -53,10 +53,13 @@ Use the `-help` option with any command to see its specific usage instructions.
 
 - `-server`: Ruckus controller server location (default: https://unleashed.ruckuswireless.com).
 - `-username`: Username for logging in to the Ruckus controller (default: dpsk).
-- `-password`: Password for logging in to the Ruckus controller (required).
+- `-password-file`: Path to a file holding the password for logging in to the Ruckus controller (a trailing newline is ignored).
+- `-password`: The password itself. Other users can read it from the process list, so prefer `-password-file`. One of the two is required.
 - `-cacert`: Path to a custom CA certificate.
 - `-debug`: Enable debug output.
 - `-help`: Print usage information.
+
+Errors and usage go to stderr and the exit code is non-zero, so scripts capturing stdout only ever get command output.
 
 ## Commands
 
